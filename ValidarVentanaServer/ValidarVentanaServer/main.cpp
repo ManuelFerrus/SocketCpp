@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 //libreria para socket de windows
 #include <WS2tcpip.h>
 
@@ -63,7 +64,7 @@ void main()
 		ZeroMemory(buf, 4096);
 		//esperar los datos enviados del cliente
 		int byteReceived=recv(clientSocket, buf, 4096, 0);
-		if (strcmp(buf, "\r\n")!=0) //Se valida que no sea un saldo de linea
+		//if (strcmp(buf, "\r\n")!=0) //Se valida que no sea un saldo de linea
 		{
 			if (byteReceived==SOCKET_ERROR)
 			{
@@ -75,30 +76,34 @@ void main()
 				cout<<"Cliente desconectado"<<endl;
 				break;
 			}
+			cout<<string(buf,0,byteReceived)<<endl;
+			//cout<<string(buf, 0, byteReceived)<<endl;
 			//echo, mensaje de regreso al cliente
-			std::string answer("Server: ");
-			answer.append(buf);
-			char*response = const_cast<char*>(answer.c_str());
-			int byteSend = strlen(response);
-			send(clientSocket, response, byteSend+1, 0); //se le tiene que sumar un valor de memoria a los byte recibidos
-		}
-		else//Se envia el salto de linea
-		{
-			if (byteReceived==SOCKET_ERROR)
-			{
-				cerr<<"Error recv()."<<endl;
-				break;
-			}
-			if (byteReceived==ERROR)
-			{
-				cout<<"Cliente desconectado"<<endl;
-				break;
-			}
+			//std::string answer("Server: ");
+			//answer.append(buf);
+			//char*response = const_cast<char*>(answer.c_str());
+			//int byteSend = strlen(response);
+			//send(clientSocket, response, byteSend+1, 0); //se le tiene que sumar un valor de memoria a los byte recibidos
 			send(clientSocket, buf, byteReceived+1, 0); //se le tiene que sumar un valor de memoria a los byte recibidos
 		}
+		//else//Se envia el salto de linea
+		//{
+		//	if (byteReceived==SOCKET_ERROR)
+		//	{
+		//		cerr<<"Error recv()."<<endl;
+		//		break;
+		//	}
+		//	if (byteReceived==ERROR)
+		//	{
+		//		cout<<"Cliente desconectado"<<endl;
+		//		break;
+		//	}
+		//	send(clientSocket, buf, byteReceived+1, 0); //se le tiene que sumar un valor de memoria a los byte recibidos
+		//}
 	}
 	//cerrar el socket
 	closesocket(clientSocket);
 	//Cleanup winsock
 	WSACleanup();
+	system("pause");
 }
