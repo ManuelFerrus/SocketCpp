@@ -41,13 +41,13 @@ M0001Recibe skRecibe;
 M0001Envia skEnvia;
 
 void darSeguimiento (const char *cSuceso);
-bool buscaVentana (char cVentana);
+void buscaVentana(const char *cVentana);
 
 int main (int argc, char *argv[])
 {
-	skEnvia.iEstado=0;
-	skEnvia.bResultado=false;
 	//Inicializamos el socket
+	sprintf(cLog, "...  I N I C I A    V A L I D A V E N T A N A  ...");
+	darSeguimiento(cLog);
 	WSAData wsData;
 	WORD ver = MAKEWORD(2, 2);
 	int wsOk = WSAStartup(ver, &wsData);
@@ -88,16 +88,18 @@ int main (int argc, char *argv[])
 		closesocket(escuchaSocket);
 		WSACleanup();
 		skEnvia.iEstado=-4;
-		printf(cLog, "Error al habilitar conexion esntrantes. iEstado %d", -4);
+		sprintf(cLog, "Error al habilitar conexiones entrantes. iEstado %d", -4);
 		darSeguimiento(cLog);
 	}
 	
 	SOCKET clienteSocket;
 	while (true)
 	{
-		//Aceptamos conexion entrantes
 		sprintf(cLog, "Esperando conexiones entrantes...");
 		darSeguimiento(cLog);
+		skEnvia.iEstado=0;
+		skEnvia.bResultado=false;
+		//Aceptamos conexion entrantes
 		int stSize = sizeof(sockaddr);
 		sockaddr_in cliente;
 		clienteSocket=accept(escuchaSocket, (sockaddr*)&cliente, &stSize);
@@ -106,25 +108,26 @@ int main (int argc, char *argv[])
 			closesocket(escuchaSocket);
 			WSACleanup();
 			skEnvia.iEstado=-5;
-			printf(cLog, "Error al aceptar conexiones. iEstado %d", -5);
-		darSeguimiento(cLog);
+			sprintf(cLog, "Error al aceptar conexiones. iEstado %d", -5);
+			darSeguimiento(cLog);
 		}
 		sprintf(cLog, "Conexion desde %s ", inet_ntoa(cliente.sin_addr));
 		darSeguimiento(cLog);
 		recv(clienteSocket, GetBuff, sizeof(M0001Recibe), 0);
 		memcpy(&skRecibe, GetBuff, sizeof(M0001Recibe));
-		sprintf(cLog,"Datos recibidos  iEstado = : \n", skRecibe.iEstado);
+		sprintf(cLog,"Datos recibidos. iEstado = : %d ", skRecibe.iEstado);
 		darSeguimiento(cLog);
 		if (skRecibe.iEstado==1)
 		{
 			sprintf(cLog, "Ventana a checar: %s", skRecibe.cVentana);
 			darSeguimiento(cLog);
-			skEnvia.iEstado=1;
-			skEnvia.bResultado=true;
+			buscaVentana(skRecibe.cVentana);
 			memcpy(SendBuff, &skEnvia, sizeof(M0001Envia));
 		}
 		send(clienteSocket, SendBuff, sizeof(skEnvia),0);
-		sprintf(cLog, "Se envia respuesta al cliente... SendBuff= %s", SendBuff);
+		
+		char * vOut = skEnvia.bResultado? "true" : "false";
+		sprintf(cLog, "Se envia respuesta al cliente... skEnvia.iEstado= %d , skEnvia.bResultado= %s", skEnvia.iEstado, vOut);
 		darSeguimiento(cLog);
 	}
 	closesocket(clienteSocket);
@@ -165,19 +168,24 @@ void darSeguimiento(const char *cSuceso)
 	file.close();
 }
 
-bool buscaVentana(char cVentana)
+void buscaVentana(const char *cVentana)
 {
-	LPCTSTR WindowName = "ValidaVentana";
+	sprintf(cLog, "Dentro de buscaVentana");
+	darSeguimiento(cLog);
+	skEnvia.iEstado=1;
+
+	LPCTSTR WindowName = cVentana;
 	HWND Find=FindWindow(NULL, WindowName);
 	if (Find)
 	{
-		sprintf(cLog, "Se encontro la ventana: %s", skRecibe.cVentana);
+		sprintf(cLog, "Se encontro la ventana: %s", cVentana);
 		darSeguimiento(cLog);
+		skEnvia.bResultado=true;
 	}
 	else
 	{
-		sprintf(cLog, "NO se encontro la ventana: %s", skRecibe.cVentana);
-		darSeguimiento(cLog);	
+		sprintf(cLog, "NO se encontro la ventana: %s", cVentana);
+		darSeguimiento(cLog);
+		skEnvia.bResultado=false;
 	}
-	return false;
 }
